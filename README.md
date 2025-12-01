@@ -1,7 +1,7 @@
 
-  # Add Theme Images
+  # Munch Bogo
 
-  This is a code bundle for Add Theme Images. The original project is available at https://www.figma.com/design/H0j6nOUYJg1xIzvhMM3ghG/Add-Theme-Images.
+  This is a code bundle for Munch Bogo. The original project is available at https://www.figma.com/design/H0j6nOUYJg1xIzvhMM3ghG/Add-Theme-Images.
 
   ## Running the code
 
