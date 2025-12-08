@@ -5,6 +5,7 @@
 
   export default defineConfig({
     plugins: [react()],
+    define: {'process.env': JSON.stringify(process.env)},
     resolve: {
       extensions: ['.js', '.jsx', '.ts', '.tsx', '.json'],
       alias: {

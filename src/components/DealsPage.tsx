@@ -1,7 +1,8 @@
 import { useState } from 'react';
-import { MapPin, Bell, Search, Star, Clock } from 'lucide-react';
+import { MapPin, Bell, Search, Star, Clock, LogOut } from 'lucide-react';
 import { DealCard } from './DealCard';
 import { DealModal } from './DealModal';
+import { supabase } from '../lib/supabase';
 
 interface DealsPageProps {
   userName: string;
@@ -91,6 +92,7 @@ const DEALS = [
 export function DealsPage({ userName }: DealsPageProps) {
   const [selectedCategory, setSelectedCategory] = useState('All');
   const [selectedDeal, setSelectedDeal] = useState<typeof DEALS[0] | null>(null);
+  const [showProfileMenu, setShowProfileMenu] = useState(false);
 
   const categories = ['All', 'Fast Food', 'Coffee', 'Mexican', 'Drinks', 'Pizza', 'Asian'];
 
@@ -104,6 +106,21 @@ export function DealsPage({ userName }: DealsPageProps) {
     return sum + parseFloat(deal.savings.replace('$', ''));
   }, 0);
 
+  const handleLogout = async () => {
+    try {
+      const { error } = await supabase.auth.signOut();
+      if (error) {
+        console.error('Error signing out:', error);
+      } else {
+        console.log('Successfully signed out');
+        // The useAuth hook will detect the sign out and update the app state
+        // No need to manually redirect - App.tsx will show SignUpPage
+      }
+    } catch (error) {
+      console.error('Error signing out:', error);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gray-100 pb-8">
       {/* Header */}
@@ -113,8 +130,64 @@ export function DealsPage({ userName }: DealsPageProps) {
             <MapPin className="w-5 h-5 text-purple-500" />
             <p className="text-gray-600">Irvine, CA</p>
           </div>
-          <div className="w-10 h-10 rounded-full bg-gradient-to-br from-purple-400 to-pink-400 flex items-center justify-center text-white">
-            {userName[0]?.toUpperCase() || 'A'}
+          {/* Profile Icon with Dropdown */}
+          <div className="relative">
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                console.log('Profile icon clicked, menu state:', showProfileMenu);
+                setShowProfileMenu(!showProfileMenu);
+              }}
+              className="w-10 h-10 rounded-full bg-gradient-to-br from-purple-400 to-pink-400 flex items-center justify-center text-white hover:opacity-90 transition-opacity cursor-pointer"
+            >
+              {userName[0]?.toUpperCase() || 'A'}
+            </button>
+            
+            {/* Dropdown Menu */}
+            {showProfileMenu && (
+              <>
+                {/* Backdrop to close menu when clicking outside */}
+                <div
+                  className="fixed inset-0 z-10"
+                  onClick={(e) => {
+                    setShowProfileMenu(false);
+                  }}
+                />
+                {/* Menu */}
+                <div 
+                 className="absolute mt-2 w-48 bg-white rounded-lg shadow-xl border border-gray-200 z-50"
+                 style={{ 
+                   right: '50%',
+                   transform: 'translateX(50%)' 
+                 }}
+                 onClick={(e) => e.stopPropagation()}
+                
+                >
+                  <div className="py-1">
+                    <div className="px-4 py-2 border-b border-gray-100">
+                    </div>
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        setShowProfileMenu(false);
+                        handleLogout();
+                      }}
+                      onMouseDown={(e) => {
+                        console.log('Logout button mouse down');
+                        e.stopPropagation();
+                      }}
+                      className="w-full flex items-center gap-2 px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors text-left cursor-pointer"
+                    >
+                      <LogOut className="w-4 h-4" />
+                      Logout
+                    </button>
+                  </div>
+                </div>
+              </>
+            )}
           </div>
         </div>
 
