@@ -1,14 +1,14 @@
 import { useState } from 'react';
 import { Mail, Lock, User, Phone, ArrowLeft, Eye, EyeOff } from 'lucide-react';
+import { supabase } from '../lib/supabase';
 
-interface SignUpPageProps {
-  onSignUp: (name: string) => void;
-}
-
-export function SignUpPage({ onSignUp }: SignUpPageProps) {
+export function SignUpPage() {
   const [isLogin, setIsLogin] = useState(false);
   const [showWelcome, setShowWelcome] = useState(true);
   const [showPassword, setShowPassword] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [message, setMessage] = useState<string | null>(null);
   
   // Form fields
   const [name, setName] = useState('');
@@ -16,12 +16,129 @@ export function SignUpPage({ onSignUp }: SignUpPageProps) {
   const [password, setPassword] = useState('');
   const [phone, setPhone] = useState('');
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (isLogin) {
-      onSignUp(email.split('@')[0] || 'User');
-    } else {
-      onSignUp(name || 'User');
+    setLoading(true);
+    setError(null);
+    setMessage(null);
+
+    // Validation
+    if (!name.trim()) {
+      setError('Please enter your name');
+      setLoading(false);
+      return;
+    }
+    if (!email.trim()) {
+      setError('Please enter your email');
+      setLoading(false);
+      return;
+    }
+    if (password.length < 6) {
+      setError('Password must be at least 6 characters');
+      setLoading(false);
+      return;
+    }
+
+    try {
+      // Sign up with Supabase and include metadata
+      const { data: authData, error: authError } = await supabase.auth.signUp({
+        email: email.trim(),
+        password: password,
+        options: {
+          data: {
+            name: name.trim(),
+            phone: phone.trim() || null,
+          }
+        }
+      });
+    
+      if (authError) throw authError;
+    
+      // No need to create separate profile - data is in user_metadata
+      setMessage('Account created successfully! You can now login.');
+      // Clear form
+      setName('');
+      setEmail('');
+      setPassword('');
+      setPhone('');
+      
+    } catch (err: any) {
+      // Handle specific error messages
+      if (err.message?.includes('already registered')) {
+        setError('This email is already registered. Please login instead.');
+      } else if (err.message?.includes('password')) {
+        setError('Password must be at least 6 characters');
+      } else {
+        setError(err.message || 'An error occurred during sign up');
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    setError(null);
+    setMessage(null);
+
+    if (!email.trim()) {
+      setError('Please enter your email');
+      setLoading(false);
+      return;
+    }
+    if (!password) {
+      setError('Please enter your password');
+      setLoading(false);
+      return;
+    }
+
+    try {
+      const { error } = await supabase.auth.signInWithPassword({
+        email: email.trim(),
+        password: password,
+      });
+
+      if (error) throw error;
+      
+      // Session is automatically managed by Supabase
+      // App.tsx will detect the session change via useAuth hook
+      
+    } catch (err: any) {
+      if (err.message?.includes('Invalid login credentials')) {
+        setError('Invalid email or password');
+      } else if (err.message?.includes('Email not confirmed')) {
+        setError('Please verify your email before logging in');
+      } else {
+        setError(err.message || 'An error occurred during login');
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handlePasswordReset = async () => {
+    if (!email.trim()) {
+      setError('Please enter your email address first');
+      return;
+    }
+
+    setLoading(true);
+    setError(null);
+    setMessage(null);
+
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(email.trim(), {
+        redirectTo: `${window.location.origin}/reset-password`,
+      });
+
+      if (error) throw error;
+      
+      setMessage('Password reset email sent! Check your inbox.');
+    } catch (err: any) {
+      setError(err.message || 'Failed to send reset email');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -58,6 +175,8 @@ export function SignUpPage({ onSignUp }: SignUpPageProps) {
               onClick={() => {
                 setShowWelcome(false);
                 setIsLogin(true);
+                setError(null);
+                setMessage(null);
               }}
               className="w-full bg-coral-400 hover:bg-coral-500 text-white py-4 rounded-2xl transition-all"
               style={{ backgroundColor: '#E07B7B' }}
@@ -68,6 +187,8 @@ export function SignUpPage({ onSignUp }: SignUpPageProps) {
               onClick={() => {
                 setShowWelcome(false);
                 setIsLogin(false);
+                setError(null);
+                setMessage(null);
               }}
               className="w-full bg-white text-coral-400 py-4 rounded-2xl border-2 transition-all hover:bg-gray-50"
               style={{ borderColor: '#E07B7B', color: '#E07B7B' }}
@@ -87,7 +208,11 @@ export function SignUpPage({ onSignUp }: SignUpPageProps) {
         {/* Image Placeholder - Stretches to top */}
         <div className="bg-gradient-to-br from-orange-200 via-pink-100 to-yellow-100 h-64 flex items-center justify-center relative">
           <button 
-            onClick={() => setShowWelcome(true)}
+            onClick={() => {
+              setShowWelcome(true);
+              setError(null);
+              setMessage(null);
+            }}
             className="absolute top-6 left-6 w-10 h-10 bg-white rounded-full flex items-center justify-center shadow-md hover:shadow-lg transition-all"
           >
             <ArrowLeft className="w-5 h-5" />
@@ -106,8 +231,22 @@ export function SignUpPage({ onSignUp }: SignUpPageProps) {
             </h2>
             <p className="text-center text-gray-400 mb-8">Sign in to your account</p>
 
+            {/* Error Message */}
+            {error && (
+              <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg mb-4 text-sm">
+                {error}
+              </div>
+            )}
+
+            {/* Success Message */}
+            {message && (
+              <div className="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-lg mb-4 text-sm">
+                {message}
+              </div>
+            )}
+
             {/* Form */}
-            <form onSubmit={handleSubmit} className="space-y-4 mb-6">
+            <form onSubmit={handleLogin} className="space-y-4 mb-6">
               {/* Email */}
               <div>
                 <label className="text-sm text-gray-600 mb-2 block">Email</label>
@@ -117,9 +256,11 @@ export function SignUpPage({ onSignUp }: SignUpPageProps) {
                     type="email"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    placeholder="ava.fammi@gmail.com"
+                    placeholder="NikolajKim@gmail.com"
                     className="w-full pl-12 pr-4 py-4 border-2 border-gray-200 rounded-2xl outline-none focus:border-coral-400 transition-all"
                     style={{ '--tw-ring-color': '#E07B7B' } as any}
+                    disabled={loading}
+                    required
                   />
                 </div>
               </div>
@@ -135,11 +276,14 @@ export function SignUpPage({ onSignUp }: SignUpPageProps) {
                     onChange={(e) => setPassword(e.target.value)}
                     placeholder="Enter your password"
                     className="w-full pl-12 pr-12 py-4 border-2 border-gray-200 rounded-2xl outline-none focus:border-coral-400 transition-all"
+                    disabled={loading}
+                    required
                   />
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
                     className="absolute right-4 top-1/2 -translate-y-1/2"
+                    disabled={loading}
                   >
                     {showPassword ? (
                       <EyeOff className="w-5 h-5 text-gray-400" />
@@ -149,7 +293,13 @@ export function SignUpPage({ onSignUp }: SignUpPageProps) {
                   </button>
                 </div>
                 <div className="text-right mt-2">
-                  <button type="button" className="text-xs text-gray-400">
+                  <button 
+                    type="button" 
+                    className="text-xs text-gray-400 hover:text-coral-400 transition-colors"
+                    onClick={handlePasswordReset}
+                    disabled={loading}
+                    style={{ color: loading ? '#9CA3AF' : undefined }}
+                  >
                     Forget Password?
                   </button>
                 </div>
@@ -158,10 +308,13 @@ export function SignUpPage({ onSignUp }: SignUpPageProps) {
               {/* Login Button */}
               <button
                 type="submit"
-                className="w-full text-white py-4 rounded-2xl transition-all hover:opacity-90 mt-6"
+                disabled={loading}
+                className={`w-full text-white py-4 rounded-2xl transition-all mt-6 ${
+                  loading ? 'opacity-50 cursor-not-allowed' : 'hover:opacity-90'
+                }`}
                 style={{ backgroundColor: '#E07B7B' }}
               >
-                Login
+                {loading ? 'Loading...' : 'Login'}
               </button>
             </form>
 
@@ -169,38 +322,18 @@ export function SignUpPage({ onSignUp }: SignUpPageProps) {
             <p className="text-center text-gray-500 text-sm mb-6">
               Don't have an account?{' '}
               <button
-                onClick={() => setIsLogin(false)}
-                className="text-coral-400"
+                onClick={() => {
+                  setIsLogin(false);
+                  setError(null);
+                  setMessage(null);
+                }}
+                className="text-coral-400 hover:underline"
                 style={{ color: '#E07B7B' }}
+                disabled={loading}
               >
                 Sign Up
               </button>
             </p>
-
-            {/* Social Login */}
-            <div className="text-center">
-              <p className="text-gray-400 text-sm mb-4">Or Login With</p>
-              <div className="flex justify-center gap-6">
-                <button className="w-12 h-12 rounded-full flex items-center justify-center hover:bg-gray-100 transition-all">
-                  <svg className="w-6 h-6" viewBox="0 0 24 24">
-                    <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
-                    <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
-                    <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
-                    <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
-                  </svg>
-                </button>
-                <button className="w-12 h-12 rounded-full flex items-center justify-center hover:bg-gray-100 transition-all">
-                  <svg className="w-6 h-6" fill="#1877F2" viewBox="0 0 24 24">
-                    <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
-                  </svg>
-                </button>
-                <button className="w-12 h-12 rounded-full flex items-center justify-center hover:bg-gray-100 transition-all">
-                  <svg className="w-6 h-6" fill="#1DA1F2" viewBox="0 0 24 24">
-                    <path d="M23.953 4.57a10 10 0 01-2.825.775 4.958 4.958 0 002.163-2.723c-.951.555-2.005.959-3.127 1.184a4.92 4.92 0 00-8.384 4.482C7.69 8.095 4.067 6.13 1.64 3.162a4.822 4.822 0 00-.666 2.475c0 1.71.87 3.213 2.188 4.096a4.904 4.904 0 01-2.228-.616v.06a4.923 4.923 0 003.946 4.827 4.996 4.996 0 01-2.212.085 4.936 4.936 0 004.604 3.417 9.867 9.867 0 01-6.102 2.105c-.39 0-.779-.023-1.17-.067a13.995 13.995 0 007.557 2.209c9.053 0 13.998-7.496 13.998-13.985 0-.21 0-.42-.015-.63A9.935 9.935 0 0024 4.59z"/>
-                  </svg>
-                </button>
-              </div>
-            </div>
           </div>
         </div>
       </div>
@@ -213,7 +346,11 @@ export function SignUpPage({ onSignUp }: SignUpPageProps) {
       {/* Image Placeholder - Stretches to top */}
       <div className="bg-gradient-to-br from-orange-200 via-pink-100 to-yellow-100 h-64 flex items-center justify-center relative">
         <button 
-          onClick={() => setShowWelcome(true)}
+          onClick={() => {
+            setShowWelcome(true);
+            setError(null);
+            setMessage(null);
+          }}
           className="absolute top-6 left-6 w-10 h-10 bg-white rounded-full flex items-center justify-center shadow-md hover:shadow-lg transition-all"
         >
           <ArrowLeft className="w-5 h-5" />
@@ -232,8 +369,22 @@ export function SignUpPage({ onSignUp }: SignUpPageProps) {
           </h2>
           <p className="text-center text-gray-400 mb-8">Create account and choose favorite menu</p>
 
+          {/* Error Message */}
+          {error && (
+            <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg mb-4 text-sm">
+              {error}
+            </div>
+          )}
+
+          {/* Success Message */}
+          {message && (
+            <div className="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-lg mb-4 text-sm">
+              {message}
+            </div>
+          )}
+
           {/* Form */}
-          <form onSubmit={handleSubmit} className="space-y-4 mb-6">
+          <form onSubmit={handleSignUp} className="space-y-4 mb-6">
             {/* Name */}
             <div>
               <label className="text-sm text-gray-600 mb-2 block">Name</label>
@@ -243,8 +394,10 @@ export function SignUpPage({ onSignUp }: SignUpPageProps) {
                   type="text"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
-                  placeholder="Ava Fami"
+                  placeholder="Nikolaj Kim"
                   className="w-full pl-12 pr-4 py-4 border-2 border-gray-200 rounded-2xl outline-none focus:border-coral-400 transition-all"
+                  disabled={loading}
+                  required
                 />
               </div>
             </div>
@@ -260,6 +413,8 @@ export function SignUpPage({ onSignUp }: SignUpPageProps) {
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="Enter your Email address"
                   className="w-full pl-12 pr-4 py-4 border-2 border-gray-200 rounded-2xl outline-none focus:border-coral-400 transition-all"
+                  disabled={loading}
+                  required
                 />
               </div>
             </div>
@@ -275,11 +430,15 @@ export function SignUpPage({ onSignUp }: SignUpPageProps) {
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="Enter your password"
                   className="w-full pl-12 pr-12 py-4 border-2 border-gray-200 rounded-2xl outline-none focus:border-coral-400 transition-all"
+                  disabled={loading}
+                  required
+                  minLength={6}
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
                   className="absolute right-4 top-1/2 -translate-y-1/2"
+                  disabled={loading}
                 >
                   {showPassword ? (
                     <EyeOff className="w-5 h-5 text-gray-400" />
@@ -288,11 +447,12 @@ export function SignUpPage({ onSignUp }: SignUpPageProps) {
                   )}
                 </button>
               </div>
+              <p className="text-xs text-gray-400 mt-1">Must be at least 6 characters</p>
             </div>
 
             {/* Phone Number */}
             <div>
-              <label className="text-sm text-gray-600 mb-2 block">Phone Number</label>
+              <label className="text-sm text-gray-600 mb-2 block">Phone Number (Optional)</label>
               <div className="relative">
                 <Phone className="w-5 h-5 text-gray-400 absolute left-4 top-1/2 -translate-y-1/2" />
                 <input
@@ -301,6 +461,7 @@ export function SignUpPage({ onSignUp }: SignUpPageProps) {
                   onChange={(e) => setPhone(e.target.value)}
                   placeholder="Enter your phone number"
                   className="w-full pl-12 pr-4 py-4 border-2 border-gray-200 rounded-2xl outline-none focus:border-coral-400 transition-all"
+                  disabled={loading}
                 />
               </div>
             </div>
@@ -308,10 +469,13 @@ export function SignUpPage({ onSignUp }: SignUpPageProps) {
             {/* Sign Up Button */}
             <button
               type="submit"
-              className="w-full text-white py-4 rounded-2xl transition-all hover:opacity-90 mt-6"
+              disabled={loading}
+              className={`w-full text-white py-4 rounded-2xl transition-all mt-6 ${
+                loading ? 'opacity-50 cursor-not-allowed' : 'hover:opacity-90'
+              }`}
               style={{ backgroundColor: '#E07B7B' }}
             >
-              Sign Up
+              {loading ? 'Creating Account...' : 'Sign Up'}
             </button>
           </form>
 
@@ -319,38 +483,18 @@ export function SignUpPage({ onSignUp }: SignUpPageProps) {
           <p className="text-center text-gray-500 text-sm mb-6">
             Already have an account?{' '}
             <button
-              onClick={() => setIsLogin(true)}
-              className="text-coral-400"
+              onClick={() => {
+                setIsLogin(true);
+                setError(null);
+                setMessage(null);
+              }}
+              className="text-coral-400 hover:underline"
               style={{ color: '#E07B7B' }}
+              disabled={loading}
             >
-              Log in
+              Login
             </button>
           </p>
-
-          {/* Social Login */}
-          <div className="text-center">
-            <p className="text-gray-400 text-sm mb-4">Or sign up With</p>
-            <div className="flex justify-center gap-6">
-              <button className="w-12 h-12 rounded-full flex items-center justify-center hover:bg-gray-100 transition-all">
-                <svg className="w-6 h-6" viewBox="0 0 24 24">
-                  <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
-                  <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
-                  <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
-                  <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
-                </svg>
-              </button>
-              <button className="w-12 h-12 rounded-full flex items-center justify-center hover:bg-gray-100 transition-all">
-                <svg className="w-6 h-6" fill="#1877F2" viewBox="0 0 24 24">
-                  <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
-                </svg>
-              </button>
-              <button className="w-12 h-12 rounded-full flex items-center justify-center hover:bg-gray-100 transition-all">
-                <svg className="w-6 h-6" fill="#1DA1F2" viewBox="0 0 24 24">
-                  <path d="M23.953 4.57a10 10 0 01-2.825.775 4.958 4.958 0 002.163-2.723c-.951.555-2.005.959-3.127 1.184a4.92 4.92 0 00-8.384 4.482C7.69 8.095 4.067 6.13 1.64 3.162a4.822 4.822 0 00-.666 2.475c0 1.71.87 3.213 2.188 4.096a4.904 4.904 0 01-2.228-.616v.06a4.923 4.923 0 003.946 4.827 4.996 4.996 0 01-2.212.085 4.936 4.936 0 004.604 3.417 9.867 9.867 0 01-6.102 2.105c-.39 0-.779-.023-1.17-.067a13.995 13.995 0 007.557 2.209c9.053 0 13.998-7.496 13.998-13.985 0-.21 0-.42-.015-.63A9.935 9.935 0 0024 4.59z"/>
-                </svg>
-              </button>
-            </div>
-          </div>
         </div>
       </div>
     </div>
