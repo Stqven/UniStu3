@@ -1,4 +1,4 @@
-import { Star, Clock, MapPin } from 'lucide-react';
+import { Star, Clock } from 'lucide-react';
 
 interface Deal {
   id: number;
@@ -13,6 +13,9 @@ interface Deal {
   savings: string;
   rating: number;
   time: string;
+  originalPrice: number;
+  price: number;
+  expiresIn: string;
 }
 
 interface DealCardProps {
@@ -33,6 +36,13 @@ export function DealCard({ deal, onClaim }: DealCardProps) {
     }
   };
 
+  const formatPrice = (price: number) => {
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: 'USD',
+    }).format(price);
+  };
+
   return (
     <div 
       className="min-w-[280px] w-[280px] snap-center"
@@ -40,9 +50,15 @@ export function DealCard({ deal, onClaim }: DealCardProps) {
     >
       <div className="bg-white rounded-3xl overflow-hidden shadow-lg hover:shadow-xl transition-all cursor-pointer">
         <div className={`${deal.color} p-12 relative flex items-center justify-center`}>
-          <div className="absolute top-3 right-3 bg-black text-white text-xs px-3 py-1 rounded-full">
+          {/* Expires In Badge - Fixed "Expires in Expired" text logic */}
+          <div className="absolute top-3 left-4 bg-black text-white text-xs font-medium px-3 py-1 rounded-full shadow-sm">
+            {deal.expiresIn === 'Expired' ? 'Expired' : `Expires in ${deal.expiresIn}`}
+          </div>
+
+          <div className="absolute top-3 right-3 bg-white text-black text-xs px-3 py-1 rounded-full">
             Save {deal.savings}
           </div>
+          
           <div 
             className="text-9xl transform hover:scale-110 transition-transform"
             style={{
@@ -69,9 +85,14 @@ export function DealCard({ deal, onClaim }: DealCardProps) {
           </div>
 
           <div className="flex items-center justify-between">
-            <div>
-              <p className="text-gray-500 text-xs mb-1">You Save</p>
-              <p className="text-2xl">{deal.savings}</p>
+            <div className="flex items-baseline gap-2">
+              {/* Force line-through using style to ensure it appears */}
+              <span className="text-gray-400 text-lg" style={{ textDecoration: 'line-through' }}>
+                {formatPrice(deal.originalPrice)}
+              </span>
+              <span className="text-2xl font-bold text-gray-900">
+                {formatPrice(deal.price)}
+              </span>
             </div>
           </div>
         </div>
