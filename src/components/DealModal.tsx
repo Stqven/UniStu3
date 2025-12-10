@@ -1,4 +1,4 @@
-import { X, MapPin, Clock, Star, Share2 } from 'lucide-react';
+import { X, MapPin, Clock, Star, Share2, ExternalLink } from 'lucide-react';
 
 interface Deal {
   id: number;
@@ -7,6 +7,7 @@ interface Deal {
   description: string;
   category: string;
   distance: string;
+  address: string;
   validUntil: string;
   color: string;
   savings: string;
@@ -51,6 +52,8 @@ export function DealModal({ deal, onClose }: DealModalProps) {
       console.log('Error sharing:', err);
     }
   };
+
+  const mapUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(deal.address || `${deal.restaurant} Irvine CA`)}`;
 
   return (
     <div 
@@ -99,10 +102,18 @@ export function DealModal({ deal, onClose }: DealModalProps) {
               <Clock className="w-5 h-5 text-pink-400" />
               <span>{deal.time}</span>
             </div>
-            <div className="flex items-center gap-2">
-              <MapPin className="w-5 h-5 text-purple-400" />
-              <span>{deal.distance}</span>
-            </div>
+            
+            {/* Redirect Link with Name and Distance */}
+            <a 
+              href={mapUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center gap-2 hover:text-purple-600 transition-colors group cursor-pointer"
+              title="Get Directions"
+            >
+              <MapPin className="w-5 h-5 text-purple-400 group-hover:text-purple-600" />
+              {deal.restaurant} ({deal.distance})
+            </a>
           </div>
 
           <div className="bg-gray-100 rounded-2xl p-6 mb-6">
