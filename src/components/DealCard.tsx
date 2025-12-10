@@ -7,6 +7,7 @@ interface Deal {
   description: string;
   category: string;
   distance: string;
+  address: string;
   validUntil: string;
   color: string;
   savings: string;
