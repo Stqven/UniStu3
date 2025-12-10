@@ -17,11 +17,13 @@ const DEALS = [
     category: 'Fast Food',
     distance: '0.5 mi',
     address: '4115 Campus Dr, Irvine, CA 92612',
-    validUntil: 'Nov 30',
+    validUntil: 'Dec 15',
     color: 'bg-purple-200',
     savings: '$8.50',
     rating: 4.8,
-    time: '10 min'
+    time: '10 min',
+    originalPrice: 17.00,
+    price: 8.50
   },
   {
     id: 2,
@@ -31,11 +33,13 @@ const DEALS = [
     category: 'Coffee',
     distance: '0.3 mi',
     address: '4255 Campus Dr A150, Irvine, CA 92612',
-    validUntil: 'Nov 28',
+    validUntil: 'Dec 12',
     color: 'bg-pink-200',
     savings: '$6.75',
     rating: 4.6,
-    time: '5 min'
+    time: '5 min',
+    originalPrice: 13.50,
+    price: 6.75
   },
   {
     id: 3,
@@ -45,11 +49,13 @@ const DEALS = [
     category: 'Mexican',
     distance: '1.2 mi',
     address: '4255 Campus Dr A150, Irvine, CA 92612',
-    validUntil: 'Dec 5',
+    validUntil: 'Dec 13',
     color: 'bg-amber-200',
     savings: '$12.00',
     rating: 4.5,
-    time: '15 min'
+    time: '15 min',
+    originalPrice: 24.00,
+    price: 12.00
   },
   {
     id: 4,
@@ -59,11 +65,13 @@ const DEALS = [
     category: 'Drinks',
     distance: '0.8 mi',
     address: '4187 Campus Dr Suite M173, Irvine, CA 92612',
-    validUntil: 'Nov 29',
+    validUntil: 'Dec 20',
     color: 'bg-purple-200',
     savings: '$7.50',
     rating: 4.7,
-    time: '8 min'
+    time: '8 min',
+    originalPrice: 15.00,
+    price: 7.50,
   },
   {
     id: 5,
@@ -73,11 +81,13 @@ const DEALS = [
     category: 'Pizza',
     distance: '1.5 mi',
     address: '4255 Campus Dr A120, Irvine, CA 92612',
-    validUntil: 'Dec 1',
+    validUntil: 'Dec 16',
     color: 'bg-pink-200',
     savings: '$9.95',
     rating: 4.4,
-    time: '12 min'
+    time: '12 min',
+    originalPrice: 19.90,
+    price: 9.95
   },
   {
     id: 6,
@@ -87,17 +97,38 @@ const DEALS = [
     category: 'Asian',
     distance: '0.4 mi',
     address: 'A232 Student Center, Irvine, CA 92697',
-    validUntil: 'Nov 27',
+    validUntil: 'Dec 14',
     color: 'bg-amber-200',
     savings: '$10.50',
     rating: 4.3,
-    time: '7 min'
+    time: '7 min',
+    originalPrice: 21.00,
+    price: 10.50
   }
 ];
 
+function getTimeRemaining(validUntilStr: string): string {
+  const currentYear = new Date().getFullYear();
+  const expiryDate = new Date(`${validUntilStr}, ${currentYear} 23:59:59`);
+  const now = new Date();
+
+  const diff = expiryDate.getTime() - now.getTime();
+
+  if (diff <= 0) return 'Expired';
+
+  const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+  const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+  const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+
+  if (days > 0) {
+    return `${days}d ${hours}h`;
+  }
+  return `${hours}h ${minutes}m`;
+}
+
 export function DealsPage({ userName }: DealsPageProps) {
   const [selectedCategory, setSelectedCategory] = useState('All');
-  const [selectedDeal, setSelectedDeal] = useState<typeof DEALS[0] | null>(null);
+  const [selectedDeal, setSelectedDeal] = useState<(typeof DEALS[0] & { expiresIn: string }) | null>(null);
   const [showProfileMenu, setShowProfileMenu] = useState(false);
 
   const categories = ['All', 'Fast Food', 'Coffee', 'Mexican', 'Drinks', 'Pizza', 'Asian'];
@@ -142,7 +173,6 @@ export function DealsPage({ userName }: DealsPageProps) {
               type="button"
               onClick={(e) => {
                 e.stopPropagation();
-                console.log('Profile icon clicked, menu state:', showProfileMenu);
                 setShowProfileMenu(!showProfileMenu);
               }}
               className="w-10 h-10 rounded-full bg-gradient-to-br from-purple-400 to-pink-400 flex items-center justify-center text-white hover:opacity-90 transition-opacity cursor-pointer"
@@ -153,14 +183,12 @@ export function DealsPage({ userName }: DealsPageProps) {
             {/* Dropdown Menu */}
             {showProfileMenu && (
               <>
-                {/* Backdrop to close menu when clicking outside */}
                 <div
                   className="fixed inset-0 z-10"
                   onClick={(e) => {
                     setShowProfileMenu(false);
                   }}
                 />
-                {/* Menu */}
                 <div 
                  className="absolute mt-2 w-48 bg-white rounded-lg shadow-xl border border-gray-200 z-50"
                  style={{ 
@@ -168,11 +196,8 @@ export function DealsPage({ userName }: DealsPageProps) {
                    transform: 'translateX(50%)' 
                  }}
                  onClick={(e) => e.stopPropagation()}
-                
                 >
                   <div className="py-1">
-                    <div className="px-4 py-2 border-b border-gray-100">
-                    </div>
                     <button
                       type="button"
                       onClick={(e) => {
@@ -180,10 +205,6 @@ export function DealsPage({ userName }: DealsPageProps) {
                         e.stopPropagation();
                         setShowProfileMenu(false);
                         handleLogout();
-                      }}
-                      onMouseDown={(e) => {
-                        console.log('Logout button mouse down');
-                        e.stopPropagation();
                       }}
                       className="w-full flex items-center gap-2 px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors text-left cursor-pointer"
                     >
@@ -201,7 +222,6 @@ export function DealsPage({ userName }: DealsPageProps) {
           What BOGO deal are you claiming today?
         </h1>
 
-        {/* Money Saved Stats */}
         <div className="bg-gradient-to-r from-pink-300 to-pink-200 rounded-3xl p-6 mt-6">
           <div className="flex items-center justify-between">
             <div>
@@ -244,8 +264,14 @@ export function DealsPage({ userName }: DealsPageProps) {
           {filteredDeals.map((deal) => (
             <DealCard 
               key={deal.id} 
-              deal={deal}
-              onClaim={() => setSelectedDeal(deal)}
+              deal={{
+                ...deal,
+                expiresIn: getTimeRemaining(deal.validUntil)
+              }}
+              onClaim={() => setSelectedDeal({
+                ...deal,
+                expiresIn: getTimeRemaining(deal.validUntil)
+              })}
             />
           ))}
         </div>

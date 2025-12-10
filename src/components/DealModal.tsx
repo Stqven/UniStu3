@@ -1,4 +1,4 @@
-import { X, MapPin, Clock, Star, Share2, ExternalLink } from 'lucide-react';
+import { X, MapPin, Clock, Star, Share2 } from 'lucide-react';
 
 interface Deal {
   id: number;
@@ -13,6 +13,9 @@ interface Deal {
   savings: string;
   rating: number;
   time: string;
+  originalPrice: number;
+  price: number;
+  expiresIn: string;
 }
 
 interface DealModalProps {
@@ -53,8 +56,9 @@ export function DealModal({ deal, onClose }: DealModalProps) {
     }
   };
 
-  const mapUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(deal.address || `${deal.restaurant} Irvine CA`)}`;
-
+  // Generate Google Maps URL
+  const mapUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(deal.address || `${deal.restaurant} Irvine CA`)}`;  
+  
   return (
     <div 
       className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-6 animate-in fade-in"
@@ -103,7 +107,7 @@ export function DealModal({ deal, onClose }: DealModalProps) {
               <span>{deal.time}</span>
             </div>
             
-            {/* Redirect Link with Name and Distance */}
+            {/* Redirect Link */}
             <a 
               href={mapUrl}
               target="_blank"
