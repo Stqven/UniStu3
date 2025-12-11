@@ -163,7 +163,7 @@ export function SignUpPage() {
 
           <div>
              <img
-              src="src/components/images/banner.png"   // put image in /public
+              src="src/components/images/banner.png" 
               alt="banner"
               className="h-24 w-24 mx-auto mb-4 object-contain"
             />
@@ -214,7 +214,7 @@ export function SignUpPage() {
     return (
       <div className="min-h-screen bg-white flex flex-col">
         {/* Image Placeholder - Stretches to top */}
-        <div className="bg-gradient-to-br from-orange-200 via-pink-100 to-yellow-100 h-64 flex items-center justify-center relative">
+        <div className="flex items-center justify-center relative">
           <button 
             onClick={() => {
               setShowWelcome(true);
@@ -225,11 +225,19 @@ export function SignUpPage() {
           >
             <ArrowLeft className="w-5 h-5" />
           </button>
-          <div className="text-center text-gray-400">
+          {/* <div className="text-center text-gray-400">
             <p className="text-sm">Image Area</p>
             <p className="text-xs">(Insert image here)</p>
-          </div>
+          </div> */}
         </div>
+{/* 
+        <div className='flex justify-center items-center pt-6'>
+             <img
+              src="src/components/images/banner.png"   // put image in /public
+              alt="banner"
+              className="h-16 w-auto mx-auto mb-4 object-contain"
+            />
+          </div> */}
 
         {/* Content Container */}
         <div className="flex-1 flex items-center justify-center p-6">
@@ -352,7 +360,7 @@ export function SignUpPage() {
   return (
     <div className="min-h-screen bg-white flex flex-col">
       {/* Image Placeholder - Stretches to top */}
-      <div className="bg-gradient-to-br from-orange-200 via-pink-100 to-yellow-100 h-64 flex items-center justify-center relative">
+      <div className="flex items-center justify-center relative">
         <button 
           onClick={() => {
             setShowWelcome(true);
@@ -363,11 +371,19 @@ export function SignUpPage() {
         >
           <ArrowLeft className="w-5 h-5" />
         </button>
-        <div className="text-center text-gray-400">
+        {/* <div className="text-center text-gray-400">
           <p className="text-sm">Image Area</p>
           <p className="text-xs">(Insert image here)</p>
-        </div>
+        </div> */}
       </div>
+
+      {/* <div className='flex justify-center items-center pt-6'>
+             <img
+              src="src/components/images/banner.png"   // put image in /public
+              alt="banner"
+              className="h-10 sm:h-12 md:h-14 w-auto flex items-center"
+            />
+          </div> */}
 
       {/* Content Container */}
       <div className="flex-1 flex items-center justify-center p-6">
