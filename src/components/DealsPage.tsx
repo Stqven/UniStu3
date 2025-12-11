@@ -163,7 +163,7 @@ export function DealsPage({ userName }: DealsPageProps) {
   const [selectedDeal, setSelectedDeal] = useState<(typeof DEALS[0] & { expiresIn: string }) | null>(null);
   const [showProfileMenu, setShowProfileMenu] = useState(false);
 
-  const categories = ['All','Low-To-High', 'High-to-Low', 'Top-Rated', 'Nearest', 'Ending-Soon', 'Newest', 'Biggest-Savers'];
+  const categories = ['All', 'Fast Food', 'Coffee', 'Mexican', 'Drinks', 'Pizza', 'Asian'];
 
   const filteredDeals = DEALS.filter(deal => {
     const matchesCategory = selectedCategory === 'All' || deal.category === selectedCategory;
