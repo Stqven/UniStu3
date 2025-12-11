@@ -148,22 +148,30 @@ export function SignUpPage() {
       <div className="min-h-screen bg-white flex items-center justify-center p-6">
         <div className="max-w-sm w-full">
           {/* Logo */}
-          <div className="text-center mb-8">
+          {/* <div className="text-center mb-8">
             <div className="text-4xl mb-2">🍔</div>
             <h1 className="text-2xl">BOGO FINDS</h1>
-          </div>
+          </div> */}
 
           {/* Illustration Placeholder */}
-          <div className="bg-gradient-to-br from-yellow-200 via-orange-100 to-yellow-200 rounded-3xl p-12 mb-8 h-64 flex items-center justify-center">
+          {/* <div className="bg-gradient-to-br from-yellow-200 via-orange-100 to-yellow-200 rounded-3xl p-12 mb-8 h-64 flex items-center justify-center">
             <div className="text-center text-gray-400">
               <p className="text-sm">Illustration Area</p>
               <p className="text-xs">(Insert image here)</p>
             </div>
+          </div> */}
+
+          <div>
+             <img
+              src="src/components/images/banner.png"   // put image in /public
+              alt="banner"
+              className="h-24 w-24 mx-auto mb-4 object-contain"
+            />
           </div>
 
           {/* Welcome Text */}
           <div className="text-center mb-8">
-            <h2 className="text-4xl mb-4">WELCOME!</h2>
+            {/* <h2 className="text-4xl mb-4">WELCOME!</h2> */}
             <p className="text-gray-500">
               Find the best BOGO deals with easy, on-demand discovery
             </p>
